@@ -1,0 +1,5 @@
+option java_package = "org.glassfish.grizzly.utils";
+message Person {
+  required string name = 1;
+  required int32 age = 2;
+}
