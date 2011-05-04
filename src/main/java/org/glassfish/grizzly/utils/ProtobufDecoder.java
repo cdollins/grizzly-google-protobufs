@@ -8,6 +8,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Protocol Buffer Decoder
@@ -16,6 +17,7 @@ import java.util.logging.Logger;
  */
 public class ProtobufDecoder extends AbstractTransformer<Buffer,Message> {
     public static final int INVALID_PROTOCOL_BUFFER_ERROR = 0;
+    public static final int IO_EXCEPTION_DURING_PROTOBUF_CREATION_ERROR = 1;
 
     private static final Logger logger = Grizzly.logger(ProtobufDecoder.class);
     private static final int LENGTH_HEADER_SIZE = 4;
@@ -54,20 +56,22 @@ public class ProtobufDecoder extends AbstractTransformer<Buffer,Message> {
             return TransformationResult.createIncompletedResult(input);
         }
 
-        final byte [] body = new byte[protobufSize];
-        input.get(body);
-
+        final int pos = input.position();
+        final BufferInputStream stream = new BufferInputStream(input, pos, pos + protobufSize);
         final Message protobufMessage;
         try {
-            protobufMessage = message.newBuilderForType().mergeFrom(body).build();
+            protobufMessage = message.newBuilderForType().mergeFrom(stream).build();
         } catch (InvalidProtocolBufferException e) {
             final String msg = "InvalidProtocolBufferException during ProtocolBuffer construction.";
             logger.log(Level.WARNING, msg);
             return TransformationResult.createErrorResult(INVALID_PROTOCOL_BUFFER_ERROR, msg);
+        } catch (IOException e) {
+            final String msg = "IOException during ProtocolBuffer construction.";
+            logger.log(Level.WARNING, msg);
+            return TransformationResult.createErrorResult(IO_EXCEPTION_DURING_PROTOBUF_CREATION_ERROR, msg);
         }
 
-        return TransformationResult.createCompletedResult(
-                protobufMessage, input);
+        return TransformationResult.createCompletedResult(protobufMessage, input);
     }
 
     @Override
