@@ -18,6 +18,7 @@ public class ProtobufEncoder extends AbstractTransformer<Message,Buffer> {
     public static final int IO_ERROR_FROM_BUFFER_OUTPUT_STREAM = 0;
     private static final Logger logger = Grizzly.logger(ProtobufEncoder.class);
     private static final int LENGTH_HEADER_SIZE = 4;
+    private static final byte [] LENGTH_HEADER_BUFFER = new byte[LENGTH_HEADER_SIZE];
 
     @Override
     protected TransformationResult<Message, Buffer> transformImpl(final AttributeStorage storage, final Message input) throws TransformationException {
@@ -29,7 +30,7 @@ public class ProtobufEncoder extends AbstractTransformer<Message,Buffer> {
         final BufferOutputStream bos = new BufferOutputStream(mm);
 
         try {
-            bos.write(new byte[LENGTH_HEADER_SIZE]);
+            bos.write(LENGTH_HEADER_BUFFER);
             input.writeTo(bos);
             bos.close();
         } catch (IOException e) {
